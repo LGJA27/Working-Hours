@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Working Hours</title>
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Hours" />
+<meta name="theme-color" content="#F5F5F7" />
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231D1D1F'/%3E%3Ccircle cx='50' cy='50' r='28' fill='none' stroke='%231B4332' stroke-width='6'/%3E%3Cline x1='50' y1='50' x2='50' y2='32' stroke='%231B4332' stroke-width='5' stroke-linecap='round'/%3E%3Cline x1='50' y1='50' x2='62' y2='56' stroke='%231B4332' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E" />
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  :root{
+    --bg:#F5F5F7; --surface:#FFFFFF; --surface2:#FAFAFA;
+    --ink:#1D1D1F; --ink-soft:#6E6E73; --ink-faint:#AEAEB2;
+    --line:#E1E1E4;
+    --forest:#1B4332; --forest-dark:#12301F; --forest-soft:rgba(27,67,50,.08); --forest-soft2:rgba(27,67,50,.14);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;-webkit-font-smoothing:antialiased;}
+  body{min-height:100vh; padding-bottom:env(safe-area-inset-bottom);}
+  .tab{font-variant-numeric:tabular-nums;}
+  #app{max-width:440px;margin:0 auto;min-height:100vh;position:relative;}
+
+  header{position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;
+    padding:16px 12px; padding-top:calc(16px + env(safe-area-inset-top)); background:rgba(245,245,247,.92); backdrop-filter:blur(14px); border-bottom:1px solid var(--line);}
+  header button{background:none;border:none;padding:9px;border-radius:999px;color:var(--ink);display:flex;transition:background .15s;}
+  header button:active{background:rgba(0,0,0,.06); transform:scale(.94);}
+  header .title{font-size:14px;letter-spacing:-.01em;font-weight:600;color:var(--ink);}
+  header .spacer{width:40px;}
+
+  .view{padding:28px 20px 40px;}
+  .hidden{display:none !important;}
+
+  /* ---- Home ---- */
+  .clock-card{background:var(--surface);border:1px solid var(--line);border-radius:28px;
+    padding:36px 24px 30px;display:flex;flex-direction:column;align-items:center;
+    box-shadow:0 1px 2px rgba(0,0,0,.03), 0 12px 32px rgba(0,0,0,.05);max-width:360px;margin:0 auto;}
+  .clock-day{font-size:13px;font-weight:600;letter-spacing:.02em;color:var(--ink-soft);margin-bottom:2px;}
+  .clock-date{font-size:15px;color:var(--ink-faint);margin-bottom:18px;font-weight:500;}
+  .clock-time{font-size:46px;line-height:1;font-weight:700;letter-spacing:-.02em;color:var(--ink);}
+
+  .today-ring{max-width:360px;margin:16px auto 0;background:var(--surface);border:1px solid var(--line);
+    border-radius:20px;padding:14px 18px;display:flex;align-items:center;gap:14px;
+    box-shadow:0 1px 2px rgba(0,0,0,.03);}
+  .ring-wrap{width:52px;height:52px;border-radius:50%;flex-shrink:0;position:relative;background:#E9E9EC;}
+  .ring-wrap::before{content:'';position:absolute;inset:5px;background:var(--surface);border-radius:50%;}
+  .ring-pct{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--forest);}
+  .today-text{flex:1;}
+  .today-label{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:2px;}
+  .today-value{font-size:15px;font-weight:600;color:var(--ink);}
+  .today-value span{color:var(--ink-faint);font-weight:500;}
+
+  .status-pill{margin:22px auto 26px;max-width:360px;text-align:center;font-size:13px;font-weight:500;padding:9px 16px;border-radius:999px;}
+  .status-pill.on{background:var(--forest-soft);color:var(--forest);}
+  .status-pill.off{background:var(--surface2);color:var(--ink-soft);border:1px solid var(--line);}
+
+  .btn-stack{max-width:360px;margin:0 auto;display:flex;flex-direction:column;gap:12px;}
+  .punch-btn{width:100%;padding:18px;border:none;border-radius:999px;font-size:16px;font-weight:600;letter-spacing:-.01em;
+    color:#fff;display:flex;align-items:center;justify-content:center;gap:9px;transition:transform .12s, opacity .12s;}
+  .punch-btn:active{transform:scale(.97);}
+  .punch-btn:disabled{opacity:.35;}
+  .punch-btn.start{background:var(--forest);}
+  .punch-btn.finish{background:var(--ink);}
+
+  /* ---- Dashboard ---- */
+  .summary-row{display:flex;gap:10px;margin-bottom:24px;}
+  .summary-card{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px 10px;text-align:center;}
+  .summary-card.active{border-color:var(--forest); box-shadow:0 0 0 1px var(--forest) inset;}
+  .summary-label{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:6px;}
+  .summary-value{font-size:18px;font-weight:700;color:var(--ink);letter-spacing:-.01em;}
+
+  .section-label{font-size:12px;font-weight:600;letter-spacing:.02em;color:var(--ink-soft);margin:0 0 10px 4px;}
+  .week-table{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden;margin-bottom:22px;}
+  .week-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-top:1px solid var(--line);}
+  .week-row:first-child{border-top:none;}
+  .week-row.future{opacity:.35;}
+  .wr-day{min-width:56px;}
+  .wr-day .d1{font-size:14px;font-weight:600;color:var(--ink);}
+  .wr-day .d2{font-size:12px;color:var(--ink-faint);margin-top:1px;}
+  .wr-mid{flex:1;padding:0 12px;font-size:12px;color:var(--ink-soft);line-height:1.5;}
+  .wr-hours{font-size:14px;font-weight:700;color:var(--forest);flex-shrink:0;}
+
+  .export-btn{width:100%;padding:17px;border:none;border-radius:999px;background:var(--ink);color:#fff;
+    font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:9px;transition:transform .12s;}
+  .export-btn:active{transform:scale(.97);}
+
+  /* ---- Entries ---- */
+  .entry-card{width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:16px;
+    padding:14px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;transition:transform .12s;}
+  .entry-card:active{transform:scale(.98);}
+  .entry-title{font-size:14px;font-weight:600;color:var(--ink);}
+  .entry-sub{font-size:12.5px;color:var(--ink-soft);margin-top:3px;}
+  .entry-comment{font-size:12px;color:var(--forest);margin-top:5px;}
+  .empty-state{text-align:center;font-size:14px;color:var(--ink-faint);margin-top:70px;}
+
+  .fab{position:fixed;bottom:26px;right:calc(50% - 220px + 24px);width:58px;height:58px;border-radius:50%;
+    background:var(--forest);color:#fff;border:none;font-size:26px;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 8px 20px rgba(27,67,50,.35);transition:transform .12s;}
+  @media (max-width:488px){ .fab{ right:24px; } }
+  .fab:active{transform:scale(.9);}
+
+  /* ---- Sheet ---- */
+  .sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:40;display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(2px);}
+  .sheet{width:100%;max-width:440px;background:var(--bg);border-radius:24px 24px 0 0;padding:22px 20px 34px;}
+  .sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+  .sheet-title{font-size:15px;font-weight:700;letter-spacing:-.01em;color:var(--ink);}
+  .sheet form{display:flex;flex-direction:column;gap:12px;}
+  .field label{font-size:12px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:6px;}
+  .field input, .field textarea{width:100%;padding:13px 14px;border-radius:12px;border:none;
+    background:var(--surface2); font-size:14px;font-family:'Inter',sans-serif; color:var(--ink); outline:none; box-shadow:inset 0 0 0 1px var(--line);}
+  .field input:focus, .field textarea:focus{box-shadow:inset 0 0 0 1.5px var(--forest);}
+  .row2{display:flex;gap:12px;}
+  .row2 .field{flex:1;}
+  .save-btn{padding:17px;border:none;border-radius:999px;background:var(--forest);color:#fff;font-weight:600;font-size:15px;margin-top:4px;}
+  .del-btn{padding:15px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--ink-soft);
+    font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:center;gap:6px;}
+  .form-error{color:var(--ink);background:var(--surface2);border-radius:10px;padding:10px 12px;font-size:13px;font-weight:500;}
+
+  #toast{position:fixed;top:calc(14px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:50;
+    max-width:90%;padding:13px 18px;border-radius:999px;color:#fff;font-size:13.5px;font-weight:500;background:var(--ink);
+    display:flex;align-items:center;gap:8px;box-shadow:0 8px 24px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:opacity .2s, transform .2s;}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(4px);}
+  #toast.success{background:var(--forest);}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <button id="btnDash" aria-label="Dashboard">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+    </button>
+    <button id="btnBack" class="hidden" aria-label="Back">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </button>
+    <div class="title" id="viewTitle">Working Hours</div>
+    <button id="btnEntries" aria-label="Entries">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    </button>
+    <div class="spacer hidden" id="headerSpacer"></div>
+  </header>
+
+  <!-- HOME -->
+  <div class="view" id="viewHome">
+    <div class="clock-card">
+      <div class="clock-day" id="clockDay">-</div>
+      <div class="clock-date" id="clockDate">-</div>
+      <div class="clock-time tab" id="clockTime">00:00:00</div>
+    </div>
+
+    <div class="today-ring">
+      <div class="ring-wrap" id="ringWrap"><div class="ring-pct" id="ringPct">0%</div></div>
+      <div class="today-text">
+        <div class="today-label">Today</div>
+        <div class="today-value tab" id="todayValue">0h 00m <span>/ 8h goal</span></div>
+      </div>
+    </div>
+
+    <div class="status-pill off" id="statusPill">Not clocked in</div>
+    <div class="btn-stack">
+      <button class="punch-btn start" id="btnStart">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><polygon points="6,4 20,12 6,20"/></svg>
+        Shift Start
+      </button>
+      <button class="punch-btn finish" id="btnFinish" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>
+        Shift Finish
+      </button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="view hidden" id="viewDashboard">
+    <div class="summary-row">
+      <div class="summary-card active"><div class="summary-label">This week</div><div class="summary-value tab" id="sumWeek">—</div></div>
+      <div class="summary-card"><div class="summary-label">Last week</div><div class="summary-value tab" id="sumLastWeek">—</div></div>
+      <div class="summary-card"><div class="summary-label">This month</div><div class="summary-value tab" id="sumMonth">—</div></div>
+    </div>
+    <div class="section-label" id="weekLabel">Week of —</div>
+    <div class="week-table" id="weekTable"></div>
+    <button class="export-btn" id="btnExport">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>
+      Export CSV
+    </button>
+  </div>
+
+  <!-- ENTRIES -->
+  <div class="view hidden" id="viewEntries" style="padding-bottom:100px;">
+    <div id="entriesList"></div>
+    <div class="empty-state hidden" id="entriesEmpty">No entries yet. Add one to get started.</div>
+  </div>
+  <button class="fab hidden" id="fabAdd" aria-label="Add entry">+</button>
+</div>
+
+<div id="toast"></div>
+
+<!-- Entry form sheet -->
+<div class="sheet-overlay hidden" id="sheetOverlay">
+  <div class="sheet">
+    <div class="sheet-head">
+      <div class="sheet-title" id="sheetTitle">Add entry</div>
+      <button id="sheetClose" style="background:none;border:none;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1D1D1F" stroke-width="1.8"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <form id="entryForm">
+      <div class="field"><label>Date</label><input type="date" id="fDate" required></div>
+      <div class="row2">
+        <div class="field"><label>Check in</label><input type="time" id="fIn" required></div>
+        <div class="field"><label>Check out</label><input type="time" id="fOut" required></div>
+      </div>
+      <div class="field"><label>Comment</label><textarea id="fComment" rows="2" placeholder="Optional note"></textarea></div>
+      <div class="form-error hidden" id="fError"></div>
+      <button type="submit" class="save-btn">Save entry</button>
+      <button type="button" class="del-btn hidden" id="fDelete">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>
+        Delete entry
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+const STORE_KEY = 'working-hours-data-v1';
+const DAILY_GOAL = 8;
+
+function loadData(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return { entries: [], activeShift: null };
+}
+function saveData(data){
+  try{
+    localStorage.setItem(STORE_KEY, JSON.stringify(data));
+    return true;
+  }catch(e){
+    showToast('Could not save — storage may be full or blocked', 'error');
+    return false;
+  }
+}
+let data = loadData();
+
+function pad(n){ return n.toString().padStart(2,'0'); }
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+function toDateStr(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function toTimeStr(d){ return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+function combineLocal(dateStr, timeStr){ return new Date(`${dateStr}T${timeStr}:00`); }
+function dayOfWeekLong(dateStr){ return new Date(`${dateStr}T00:00:00`).toLocaleDateString('en-US',{weekday:'long'}); }
+function dayOfWeekShort(dateStr){ return new Date(`${dateStr}T00:00:00`).toLocaleDateString('en-US',{weekday:'short'}); }
+function niceDate(dateStr){ return new Date(`${dateStr}T00:00:00`).toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
+function hoursDecimal(inISO, outISO){ if(!inISO||!outISO) return 0; const ms = new Date(outISO)-new Date(inISO); return ms>0? ms/3600000 : 0; }
+function fmtHours(dec){ if(!dec||dec<=0) return '—'; const h=Math.floor(dec); let m=Math.round((dec-h)*60); if(m===60){return `${h+1}h 00m`;} return `${h}h ${pad(m)}m`; }
+function fmtTimeOnly(iso){ if(!iso) return '—'; return new Date(iso).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}); }
+function getMonday(d){ const date=new Date(d); const day=date.getDay(); const diff = day===0? -6 : 1-day; date.setDate(date.getDate()+diff); date.setHours(0,0,0,0); return date; }
+function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+
+// ---------- Toast ----------
+let toastTimer;
+function showToast(msg, type='info'){
+  const el = document.getElementById('toast');
+  el.classList.remove('success');
+  if(type==='success') el.classList.add('success');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> el.classList.remove('show'), 3200);
+}
+
+// ---------- Navigation ----------
+const views = { home: document.getElementById('viewHome'), dashboard: document.getElementById('viewDashboard'), entries: document.getElementById('viewEntries') };
+const titles = { home: 'Working Hours', dashboard: 'Dashboard', entries: 'Entries' };
+let currentView = 'home';
+
+function setView(name){
+  currentView = name;
+  Object.entries(views).forEach(([k,el]) => el.classList.toggle('hidden', k!==name));
+  document.getElementById('viewTitle').textContent = titles[name];
+  document.getElementById('btnDash').classList.toggle('hidden', name!=='home');
+  document.getElementById('btnEntries').classList.toggle('hidden', name!=='home');
+  document.getElementById('btnBack').classList.toggle('hidden', name==='home');
+  document.getElementById('headerSpacer').classList.toggle('hidden', name==='home');
+  document.getElementById('fabAdd').classList.toggle('hidden', name!=='entries');
+  if(name==='dashboard') renderDashboard();
+  if(name==='entries') renderEntries();
+}
+document.getElementById('btnDash').onclick = () => setView('dashboard');
+document.getElementById('btnEntries').onclick = () => setView('entries');
+document.getElementById('btnBack').onclick = () => setView('home');
+
+// ---------- Clock ----------
+function todayHours(now){
+  const todayStr = toDateStr(now);
+  let total = data.entries.filter(e=>e.date===todayStr).reduce((s,e)=> s + hoursDecimal(e.checkIn,e.checkOut), 0);
+  if(data.activeShift && toDateStr(new Date(data.activeShift.checkIn)) === todayStr){
+    total += (now - new Date(data.activeShift.checkIn)) / 3600000;
+  }
+  return total;
+}
+function tickClock(){
+  const now = new Date();
+  document.getElementById('clockDay').textContent = now.toLocaleDateString('en-US',{weekday:'long'});
+  document.getElementById('clockDate').textContent = now.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  document.getElementById('clockTime').textContent = now.toLocaleTimeString('en-US',{hour12:false});
+  renderStatus(now);
+  renderRing(now);
+}
+function renderRing(now){
+  const h = todayHours(now);
+  const pct = Math.max(0, Math.min(1, h / DAILY_GOAL));
+  document.getElementById('ringWrap').style.background = `conic-gradient(#1B4332 ${pct*360}deg, #E9E9EC 0deg)`;
+  document.getElementById('ringPct').textContent = `${Math.round(pct*100)}%`;
+  const hh = Math.floor(h); const mm = Math.round((h-hh)*60);
+  document.getElementById('todayValue').innerHTML = `${hh}h ${pad(mm)}m <span>/ ${DAILY_GOAL}h goal</span>`;
+}
+function renderStatus(now){
+  const pill = document.getElementById('statusPill');
+  if(data.activeShift){
+    const ms = now - new Date(data.activeShift.checkIn);
+    const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000), s = Math.floor((ms%60000)/1000);
+    pill.className = 'status-pill on';
+    pill.innerHTML = `On shift since <strong>${fmtTimeOnly(data.activeShift.checkIn)}</strong> · <span class="tab">${pad(h)}:${pad(m)}:${pad(s)}</span> elapsed`;
+    document.getElementById('btnStart').disabled = true;
+    document.getElementById('btnFinish').disabled = false;
+  } else {
+    pill.className = 'status-pill off';
+    pill.textContent = 'Not clocked in';
+    document.getElementById('btnStart').disabled = false;
+    document.getElementById('btnFinish').disabled = true;
+  }
+}
+setInterval(tickClock, 1000);
+tickClock();
+
+// ---------- Shift actions ----------
+document.getElementById('btnStart').onclick = () => {
+  if(data.activeShift){ showToast(`Already clocked in since ${fmtTimeOnly(data.activeShift.checkIn)}`, 'info'); return; }
+  data.activeShift = { checkIn: new Date().toISOString() };
+  if(saveData(data)) showToast(`Shift started at ${fmtTimeOnly(data.activeShift.checkIn)}`, 'success');
+};
+document.getElementById('btnFinish').onclick = () => {
+  if(!data.activeShift){ showToast('No active shift to finish', 'error'); return; }
+  const checkOut = new Date().toISOString();
+  const entry = { id: uid(), date: toDateStr(new Date(data.activeShift.checkIn)), checkIn: data.activeShift.checkIn, checkOut, comment: '' };
+  data.entries.push(entry);
+  data.activeShift = null;
+  if(saveData(data)) showToast(`Shift finished · ${fmtHours(hoursDecimal(entry.checkIn, entry.checkOut))} worked`, 'success');
+};
+
+// ---------- Dashboard ----------
+function renderDashboard(){
+  const today = new Date();
+  const monday = getMonday(today);
+  const lastMonday = addDays(monday, -7);
+  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+
+  function sumRange(start, endExclusive){
+    return data.entries.reduce((sum,e) => {
+      const d = new Date(`${e.date}T00:00:00`);
+      return (d>=start && d<endExclusive) ? sum + hoursDecimal(e.checkIn, e.checkOut) : sum;
+    }, 0);
+  }
+  document.getElementById('sumWeek').textContent = fmtHours(sumRange(monday, addDays(monday,7)));
+  document.getElementById('sumLastWeek').textContent = fmtHours(sumRange(lastMonday, monday));
+  document.getElementById('sumMonth').textContent = fmtHours(sumRange(monthStart, addDays(today,1)));
+  document.getElementById('weekLabel').textContent = `Week of ${niceDate(toDateStr(monday))}`;
+
+  const byDate = {};
+  data.entries.forEach(e => { (byDate[e.date] = byDate[e.date]||[]).push(e); });
+
+  const table = document.getElementById('weekTable');
+  table.innerHTML = '';
+  for(let i=0;i<7;i++){
+    const d = addDays(monday, i);
+    const dateStr = toDateStr(d);
+    const dayEntries = byDate[dateStr] || [];
+    const totalH = dayEntries.reduce((s,e)=> s + hoursDecimal(e.checkIn,e.checkOut), 0);
+    const row = document.createElement('div');
+    row.className = 'week-row' + (d>today ? ' future' : '');
+    row.innerHTML = `
+      <div class="wr-day"><div class="d1">${dayOfWeekShort(dateStr)}</div><div class="d2 tab">${niceDate(dateStr)}</div></div>
+      <div class="wr-mid tab">${ dayEntries.length===0 ? '—' : dayEntries.map(e=>`<div>${fmtTimeOnly(e.checkIn)} → ${fmtTimeOnly(e.checkOut)}</div>`).join('') }</div>
+      <div class="wr-hours tab">${fmtHours(totalH)}</div>`;
+    table.appendChild(row);
+  }
+}
+document.getElementById('btnExport').onclick = () => {
+  const rows = [['Day of week','Date','Check In','Check Out','Hours worked','Comment']];
+  [...data.entries].sort((a,b)=> a.checkIn > b.checkIn ? 1 : -1).forEach(e => {
+    rows.push([dayOfWeekLong(e.date), e.date, fmtTimeOnly(e.checkIn), fmtTimeOnly(e.checkOut), fmtHours(hoursDecimal(e.checkIn,e.checkOut)), (e.comment||'').replace(/[\r\n]+/g,' ')]);
+  });
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `working-hours-${toDateStr(new Date())}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+// ---------- Entries ----------
+let editingId = null;
+function renderEntries(){
+  const list = document.getElementById('entriesList');
+  const empty = document.getElementById('entriesEmpty');
+  const sorted = [...data.entries].sort((a,b)=> a.checkIn < b.checkIn ? 1 : -1);
+  list.innerHTML = '';
+  empty.classList.toggle('hidden', sorted.length>0);
+  sorted.forEach(e => {
+    const card = document.createElement('button');
+    card.className = 'entry-card';
+    card.innerHTML = `
+      <div>
+        <div class="entry-title">${dayOfWeekLong(e.date)} · ${niceDate(e.date)}</div>
+        <div class="entry-sub tab">${fmtTimeOnly(e.checkIn)} → ${fmtTimeOnly(e.checkOut)} · ${fmtHours(hoursDecimal(e.checkIn,e.checkOut))}</div>
+        ${e.comment ? `<div class="entry-comment">${e.comment.replace(/</g,'&lt;')}</div>` : ''}
+      </div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1B4332" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 013 3L12 15l-4 1 1-4z"/></svg>`;
+    card.onclick = () => openSheet(e);
+    list.appendChild(card);
+  });
+}
+document.getElementById('fabAdd').onclick = () => openSheet(null);
+
+function openSheet(entry){
+  editingId = entry ? entry.id : null;
+  document.getElementById('sheetTitle').textContent = entry ? 'Edit entry' : 'Add entry';
+  document.getElementById('fDate').value = entry ? entry.date : toDateStr(new Date());
+  document.getElementById('fIn').value = entry ? toTimeStr(new Date(entry.checkIn)) : '09:00';
+  document.getElementById('fOut').value = entry ? toTimeStr(new Date(entry.checkOut)) : '17:00';
+  document.getElementById('fComment').value = entry ? (entry.comment||'') : '';
+  document.getElementById('fError').classList.add('hidden');
+  document.getElementById('fDelete').classList.toggle('hidden', !entry);
+  document.getElementById('sheetOverlay').classList.remove('hidden');
+}
+function closeSheet(){ document.getElementById('sheetOverlay').classList.add('hidden'); editingId = null; }
+document.getElementById('sheetClose').onclick = closeSheet;
+document.getElementById('sheetOverlay').addEventListener('click', (e) => { if(e.target.id==='sheetOverlay') closeSheet(); });
+
+document.getElementById('entryForm').onsubmit = (e) => {
+  e.preventDefault();
+  const date = document.getElementById('fDate').value;
+  const inT = document.getElementById('fIn').value;
+  const outT = document.getElementById('fOut').value;
+  const comment = document.getElementById('fComment').value;
+  const inD = combineLocal(date, inT);
+  const outD = combineLocal(date, outT);
+  const errEl = document.getElementById('fError');
+  if(outD <= inD){ errEl.textContent = 'Check out must be after check in'; errEl.classList.remove('hidden'); return; }
+  errEl.classList.add('hidden');
+
+  if(editingId){
+    const idx = data.entries.findIndex(x=>x.id===editingId);
+    if(idx>-1) data.entries[idx] = { id: editingId, date, checkIn: inD.toISOString(), checkOut: outD.toISOString(), comment };
+    if(saveData(data)) showToast('Entry updated', 'success');
+  } else {
+    data.entries.push({ id: uid(), date, checkIn: inD.toISOString(), checkOut: outD.toISOString(), comment });
+    if(saveData(data)) showToast('Entry added', 'success');
+  }
+  closeSheet();
+  renderEntries();
+};
+document.getElementById('fDelete').onclick = () => {
+  if(!editingId) return;
+  data.entries = data.entries.filter(x=>x.id!==editingId);
+  if(saveData(data)) showToast('Entry deleted', 'success');
+  closeSheet();
+  renderEntries();
+};
+
+setView('home');
+</script>
+</body>
+</html>
